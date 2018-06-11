@@ -1,10 +1,9 @@
 import socket
 import sys
-import traceback
-import signal
 import time
+import traceback
 
-#Some color stuffs
+# Some color stuffs
 white = '\033[1;97m'
 green = '\033[1;32m'
 blue = '\033[94m'
@@ -13,20 +12,21 @@ yellow = '\033[1;33m'
 magenta = '\033[1;35m'
 end = '\033[1;m'
 info = '\033[1;33m[!]\033[1;m'
-que =  '\033[1;34m[?]\033[1;m'
+que = '\033[1;34m[?]\033[1;m'
 bad = '\033[1;31m[-]\033[1;m'
 good = '\033[1;32m[+]\033[1;m'
 run = '\033[1;97m[~]\033[1;m'
 
 __version__ = '0.1'
-__usage__ = "Usage: %s$ python tiny.py <port>%s to run TinyServer on specified port."%(magenta, end)
-__banner__= """%s       
- _______           ____                    
+__usage__ = "Usage: %s$ python tiny.py <port>%s to run TinyServer on specified port." % (
+    magenta, end)
+__banner__ = """%s
+ _______           ____
 /_  __(_)__  __ __/ __/__ _____  _____ ____
  / / / / _ \/ // /\ \/ -_) __/ |/ / -_) __/
-/_/ /_/_//_/\_, /___/\__/_/  |___/\__/_/   
-           /___/                           
-%s"""%(red, end)
+/_/ /_/_//_/\_, /___/\__/_/  |___/\__/_/
+           /___/
+%s""" % (red, end)
 
 
 def create_response(response_code, html):
@@ -38,12 +38,13 @@ def create_response(response_code, html):
 
     now = time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime())
     headers = 'Date: {} GMT\r\n'.format(now)
-    headers += 'Server: TinyPyServer'+__version__+'\r\n'
+    headers += 'Server: TinyPyServer' + __version__ + '\r\n'
     headers += 'Content-Type: text/html\r\n'
     headers += 'Connection: close\r\n\r\n'
-    response_header = status_line+headers
+    response_header = status_line + headers
     response_data = html
     return response_header, response_data
+
 
 def get_filename(req):
     """REturns the finename.
@@ -60,9 +61,10 @@ def get_filename(req):
 
     return get_file
 
+
 def read_file(filename):
     try:
-        file_obj = open(filename,'rb')
+        file_obj = open(filename, 'rb')
         data = file_obj.read()
         file_obj.close()
         filename = None
@@ -70,7 +72,7 @@ def read_file(filename):
         response_code = 200
 
     except FileNotFoundError:
-        print(bad+"File Not Found. Sending 404 ...")
+        print(bad + "File Not Found. Sending 404 ...")
         response_code = 404
         data = """<!DOCTYPE html>
         <html lang="en" dir="ltr">
@@ -94,8 +96,8 @@ def main():
     if (len(sys.argv) > 1):
         port = int(sys.argv[1])
     else:
-        print(blue+__usage__+end)
-        print(info+green+"Running on default port 5000.")
+        print(blue + __usage__ + end)
+        print(info + green + "Running on default port 5000.")
         port = 5000
 
     print(__banner__)
@@ -104,18 +106,18 @@ def main():
     socket_obj.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socket_obj.bind(('', port))
     socket_obj.listen(True)
-    
-    print(good+"Server running...")
 
-    while(True):
-        try:           
+    print(good + "Server running...")
+
+    while (True):
+        try:
             client, addr = socket_obj.accept()
             client.settimeout(60)
 
-            print(info+"Client:" , client)
+            print(info + "Client:", client)
             data = client.recv(1024)
             if not data:
-                print(bad+"No data received")
+                print(bad + "No data received")
                 break
 
             req = data.decode()
@@ -123,16 +125,17 @@ def main():
 
             if req_method == "GET":
                 file_to_open = get_filename(req)
-                print(info+"Requested:", file_to_open)
+                print(info + "Requested:", file_to_open)
                 response_code, data = read_file(file_to_open)
 
-                response_header, response_data = create_response(response_code, data)
+                response_header, response_data = create_response(
+                    response_code, data)
                 client.send(response_header.encode())
                 client.send(response_data)
                 #Keep-alive is not supported so connection must be closed
                 client.close()
             else:
-                print(bad+"Method not Supported")
+                print(bad + "Method not Supported")
 
         except KeyboardInterrupt:
             socket_obj.close()

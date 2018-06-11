@@ -1,2 +1,6 @@
 home.html
 .directory
+*.out
+*.o
+*.so
+.ccls-cache

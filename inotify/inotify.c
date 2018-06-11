@@ -3,19 +3,14 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 
+// Better malloc to write less
 #define mallocate(type, length) ((type *)malloc(sizeof(type) * (length)))
 
+// For printing errors
 #define PRINT(str) printf("%s:%d %s\n", __FILE__, __LINE__, (str))
 
 
-void print(const char *s) {
-  for (int i = 0; s[i]; i += 4) {
-    putchar(s[i]);
-  }
-  putchar('\n');
-}
-
-
+// Calculate Python string length
 size_t py_str_length(const char *py_str) {
   size_t len = 0, l = 0, j;
   while (py_str[len])
@@ -28,6 +23,7 @@ size_t py_str_length(const char *py_str) {
 }
 
 
+// Convert Python string to ASCII C string
 char *py_str_to_c_str(const char *py_str)
 {
   size_t l = py_str_length(py_str);
@@ -47,52 +43,39 @@ char *py_str_to_c_str(const char *py_str)
   return c_str;
 }
 
-int print_py_str(const char *py_str)
-{
-  char *c_str = py_str_to_c_str(py_str);
-  if (c_str)
-    {
-      int return_value = printf("%s\n", c_str);
-      free(c_str);
-      return return_value;
-    }
-  return 0;
-}
 
-int fd = -1;
-
-int init_watchers() {
-  if (fd < 0)
-    fd = inotify_init();
-  return fd;
-}
-
-int watch_for_file(const char *py_str)
-{
-  if (fd < 0)
-    init_watchers();
-  return inotify_add_watch(fd, py_str, IN_MODIFY | IN_CLOSE_WRITE);
-}
-
-struct inotify_event* listen_for_writes()
-{
-  if (fd < 0)
-    PRINT("Can't listen on None. Add a watchpoint for a file using\
-watch_for_file(<filename>)");
-  struct inotify_event *event = mallocate(struct inotify_event, 1);
-  int l = read(fd, (void *)event, sizeof(*event));
-  return event;
-}
-
+// Watch for modifications(only) on a given file or directory
 int watch(const char *py_str)
 {
+  // Start the watcher system
   int fd = inotify_init();
-  const char *c = py_str_to_c_str(py_str);
+
+  // Unable to initialize sets fd to a negative value
+  if (fd < 0)
+    return 0;
+
+  // Convert Python string
+  char *c = py_str_to_c_str(py_str);
+
+  // Init watcher
   int wd = inotify_add_watch(fd, c, IN_MODIFY | IN_CLOSE_WRITE);
+
+  // File change events are fed into this structure
   struct inotify_event watch_event;
-  int len = read(fd, (void *)&watch_event, sizeof(watch_event) + 100);
+
+  // Start watching for changes
+  int len = read(fd, (void *)&watch_event, sizeof(watch_event));
+
+  // Reached here means watch is over and given file was modified
+  // So, close fd
   close(fd);
+
+  // Free memory
+  free(c);
+
+  // The read might have been corrupted so the check is necessary
   if (len == sizeof(watch_event))
     return 1;
+
   return 0;
 }

@@ -7,5 +7,8 @@ os.system("make")
 inotify = cdll.LoadLibrary("./libinotify.so")
 inotify.print("Test")
 inotify.print_py_str("Hello, World!")
-inotify.main()
-print(inotify.__dir__())
+watch_file = "inotify.c"
+if inotify.watch(watch_file):
+    print("File changed")
+else:
+    print("Error")

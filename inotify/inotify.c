@@ -84,19 +84,15 @@ watch_for_file(<filename>)");
   return event;
 }
 
-int main()
+int watch(const char *py_str)
 {
   int fd = inotify_init();
-  const char *c = "inotify.c";
+  const char *c = py_str_to_c_str(py_str);
   int wd = inotify_add_watch(fd, c, IN_MODIFY | IN_CLOSE_WRITE);
   struct inotify_event watch_event;
   int len = read(fd, (void *)&watch_event, sizeof(watch_event) + 100);
-  if (len == sizeof(watch_event))
-    for (int i = 0; watch_event.name[i]; i++)
-      printf("%d ", watch_event.name[i]);
-  else
-    printf("Not equal");
-  printf("\n");
   close(fd);
+  if (len == sizeof(watch_event))
+    return 1;
   return 0;
 }
